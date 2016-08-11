@@ -1,0 +1,30 @@
+{
+  "name": "queue",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "babel --presets es2015 queue.js -o index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/cbin0/queue.git"
+  },
+  "keywords": [
+    "queue"
+  ],
+  "author": "cuibin",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/cbin0/queue/issues"
+  },
+  "homepage": "https://github.com/cbin0/queue#readme",
+  "dependencies": {
+    "lodash": "^4.14.2",
+    "uuid": "^2.0.2"
+  },
+  "devDependencies": {
+    "babel-preset-es2015": "^6.9.0"
+  }
+}
