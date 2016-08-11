@@ -8,6 +8,8 @@ A forever queue that accepts tasks which will be executed one by one.
 var Queue = require('Queue');
 var queue = new Queue();
 
+queue.forever();
+
 setTimeout(function(){
   queue.push(function(cb) {
     setTimeout(function (params) {
