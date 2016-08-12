@@ -20,15 +20,16 @@ var _uuid2 = _interopRequireDefault(_uuid);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
 var evts = {
   new: 'new task',
-  error: 'error'
+  error: 'error',
+  success: 'success'
 };
 
 var statuses = {
@@ -37,16 +38,21 @@ var statuses = {
   done: 'done'
 };
 
-var Task = function () {
+var Task = function (_EventEmitter) {
+  _inherits(Task, _EventEmitter);
+
   function Task(taskFunc, tasks) {
     _classCallCheck(this, Task);
 
-    this.id = _uuid2.default.v4();
-    this.func = taskFunc;
-    this.tasks = tasks;
-    this.status = statuses.unstart;
-    this.error = null;
-    this.result = null;
+    var _this2 = _possibleConstructorReturn(this, Object.getPrototypeOf(Task).call(this));
+
+    _this2.id = _uuid2.default.v4();
+    _this2.func = taskFunc;
+    _this2.tasks = tasks;
+    _this2.status = statuses.unstart;
+    _this2.error = null;
+    _this2.result = null;
+    return _this2;
   }
 
   _createClass(Task, [{
@@ -58,23 +64,35 @@ var Task = function () {
       func(function (error, res) {
         _this.status = statuses.done;
         if (error) {
-          _this.error(error, cb);
+          _this._error(error, cb);
         } else {
-          _this.ok(res, cb);
+          _this._ok(res, cb);
         }
       });
     }
   }, {
-    key: 'ok',
-    value: function ok(r, cb) {
+    key: '_ok',
+    value: function _ok(r, cb) {
       this.result = r;
+      this.emit(evts.success, r);
       cb(null, r);
     }
   }, {
-    key: 'error',
-    value: function error(e) {
+    key: '_error',
+    value: function _error(e) {
       this.error = e;
+      this.emit(evts.error, e);
       cb(e);
+    }
+  }, {
+    key: 'onSuccess',
+    value: function onSuccess(handler) {
+      this.on(evts.success, handler);
+    }
+  }, {
+    key: 'onError',
+    value: function onError(handler) {
+      this.on(evts.error, handler);
     }
   }, {
     key: 'toJson',
@@ -86,31 +104,38 @@ var Task = function () {
         error: this.error
       });
     }
+  }, {
+    key: 'destroy',
+    value: function destroy() {
+      this.removeAllListeners(evts.success);
+      this.removeAllListeners(evts.error);
+      this.destroyed = true;
+    }
   }]);
 
   return Task;
-}();
+}(_events2.default);
 
-var Queue = function (_EventEmitter) {
-  _inherits(Queue, _EventEmitter);
+var Queue = function (_EventEmitter2) {
+  _inherits(Queue, _EventEmitter2);
 
   function Queue(options) {
     _classCallCheck(this, Queue);
 
-    var _this2 = _possibleConstructorReturn(this, Object.getPrototypeOf(Queue).call(this));
+    var _this3 = _possibleConstructorReturn(this, Object.getPrototypeOf(Queue).call(this));
 
-    var _this = _this2;
-    _this2.options = _lodash2.default.defaults(options, {});
-    _this2.tasks = [];
-    _this2.completed = [];
-    _this2.running = false;
-    _this2.on(evts.new, function () {
+    var _this = _this3;
+    _this3.options = _lodash2.default.defaults(options, {});
+    _this3.tasks = [];
+    _this3.completed = [];
+    _this3.running = false;
+    _this3.on(evts.new, function () {
       if (_this.running) {
         return;
       }
       _this.forever();
     });
-    return _this2;
+    return _this3;
   }
 
   _createClass(Queue, [{
@@ -121,6 +146,7 @@ var Queue = function (_EventEmitter) {
         return done();
       }
       task.exec(function (error, res) {
+        task.destroy();
         if (error) {
           _this.emit(evts.error, task);
         }
@@ -140,6 +166,7 @@ var Queue = function (_EventEmitter) {
       var t = new Task(task);
       this.tasks.push(t);
       this.emit(evts.new);
+      return t;
     }
     /*
     start (cb) {
@@ -171,8 +198,18 @@ var Queue = function (_EventEmitter) {
       }
       this.running = true;
       this._exec(task, function () {
+        if (_this.destroyed) {
+          return;
+        }
         _this.forever();
       });
+    }
+  }, {
+    key: 'destroy',
+    value: function destroy() {
+      this.removeAllListeners(evts.new);
+      this.removeAllListeners(evts.error);
+      this.destroyed = true;
     }
   }]);
 

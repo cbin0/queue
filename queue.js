@@ -4,7 +4,8 @@ import uuid from 'uuid';
 
 const evts = {
   new: 'new task',
-  error: 'error'
+  error: 'error',
+  success: 'success'
 }
 
 const statuses = {
@@ -13,8 +14,9 @@ const statuses = {
   done: 'done'
 }
 
-class Task {
+class Task extends EventEmitter {
   constructor (taskFunc, tasks) {
+    super();
     this.id = uuid.v4();
     this.func = taskFunc;
     this.tasks = tasks;
@@ -29,19 +31,27 @@ class Task {
     func((error, res) => {
       _this.status = statuses.done;
       if(error) {
-        _this.error(error, cb);
+        _this._error(error, cb);
       } else {
-        _this.ok(res, cb);
+        _this._ok(res, cb);
       }
     });
   }
-  ok (r, cb) {
+  _ok (r, cb) {
     this.result = r;
+    this.emit(evts.success, r);
     cb(null, r);
   }
-  error (e) {
+  _error (e) {
     this.error = e;
+    this.emit(evts.error, e);
     cb(e);
+  }
+  onSuccess (handler) {
+    this.on(evts.success, handler);
+  }
+  onError (handler) {
+    this.on(evts.error, handler);
   }
   toJson () {
     return JSON.stringify({
@@ -50,6 +60,11 @@ class Task {
       result: this.result,
       error: this.error
     });
+  }
+  destroy () {
+    this.removeAllListeners(evts.success);
+    this.removeAllListeners(evts.error);
+    this.destroyed = true;
   }
 }
 
@@ -76,6 +91,7 @@ class Queue extends EventEmitter {
       return done();
     }
     task.exec((error, res) => {
+      task.destroy();
       if(error) {
         _this.emit(evts.error, task);
       }
@@ -91,6 +107,7 @@ class Queue extends EventEmitter {
     let t = new Task(task);
     this.tasks.push(t);
     this.emit(evts.new);
+    return t;
   }
   /*
   start (cb) {
@@ -119,8 +136,16 @@ class Queue extends EventEmitter {
     }
     this.running = true;
     this._exec(task, () => {
+      if(_this.destroyed) {
+        return;
+      }
       _this.forever();
     });
+  }
+  destroy () {
+    this.removeAllListeners(evts.new);
+    this.removeAllListeners(evts.error);
+    this.destroyed = true;
   }
 }
 
