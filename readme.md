@@ -41,6 +41,11 @@ setTimeout(function(){
 
 this will print `mession 1 complete.` in 6s, `mession 2 complete.` in 8s, `mession 3 complete.` in 14s
 
+### test
+```
+npm test
+```
+
 ## license
 ```
 MIT
