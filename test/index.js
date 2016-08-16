@@ -12,6 +12,21 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 describe('Queue', function () {
   describe('push ok', function () {
+    it('queue get value should be 2', function (done) {
+      var q = new _queue2.default();
+      var val = 1;
+      var t = q.push(function (cb) {
+        setTimeout(function () {
+          cb(null, val += 1);
+        }, 500);
+      });
+      q.on('success', function (t) {
+        _assert2.default.equal(t.result, 2);
+        q.destroy();
+        done();
+      });
+      _assert2.default.equal(val, 1);
+    });
     it('value should be 2', function (done) {
       var q = new _queue2.default();
       var val = 1;
@@ -29,7 +44,20 @@ describe('Queue', function () {
     });
   });
   describe('push error', function () {
-    it('should throw error', function (done) {
+    it('queue should throw error', function (done) {
+      var q = new _queue2.default();
+      var t = q.push(function (cb) {
+        setTimeout(function () {
+          cb('something wrong!');
+        }, 500);
+      });
+      q.on('error', function (t) {
+        _assert2.default.equal(t.error, 'something wrong!');
+        q.destroy();
+        done();
+      });
+    });
+    it('task should throw error', function (done) {
       var q = new _queue2.default();
       var t = q.push(function (cb) {
         setTimeout(function () {

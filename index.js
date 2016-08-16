@@ -74,14 +74,18 @@ var Task = function (_EventEmitter) {
     key: '_ok',
     value: function _ok(r, cb) {
       this.result = r;
-      this.emit(evts.success, r);
+      try {
+        this.emit(evts.success, r);
+      } catch (e) {/* IGNORE */}
       cb(null, r);
     }
   }, {
     key: '_error',
-    value: function _error(e) {
+    value: function _error(e, cb) {
       this.error = e;
-      this.emit(evts.error, e);
+      try {
+        this.emit(evts.error, e);
+      } catch (e) {/* IGNORE */}
       cb(e);
     }
   }, {
@@ -149,6 +153,8 @@ var Queue = function (_EventEmitter2) {
         task.destroy();
         if (error) {
           _this.emit(evts.error, task);
+        } else {
+          _this.emit(evts.success, task);
         }
         _this.completed.unshift(task);
         _this.tasks.splice(0, 1);

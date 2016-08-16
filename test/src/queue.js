@@ -3,6 +3,21 @@ import Queue from '../../queue';
 
 describe('Queue', function() {
   describe('push ok', function() {
+    it('queue get value should be 2', function(done) {
+      let q = new Queue();
+      let val = 1;
+      let t = q.push((cb) => {
+        setTimeout(() => {
+          cb(null, val += 1);
+        }, 500);
+      });
+      q.on('success', (t) => {
+        assert.equal(t.result, 2);
+        q.destroy();
+        done();
+      });
+      assert.equal(val, 1);
+    });
     it('value should be 2', function(done) {
       let q = new Queue();
       let val = 1;
@@ -20,7 +35,20 @@ describe('Queue', function() {
     });
   });
   describe('push error', function() {
-    it('should throw error', function(done) {
+    it('queue should throw error', function(done) {
+      let q = new Queue();
+      let t = q.push((cb) => {
+        setTimeout(() => {
+          cb('something wrong!');
+        }, 500);
+      });
+      q.on('error', (t) => {
+        assert.equal(t.error, 'something wrong!');
+        q.destroy();
+        done();
+      });
+    });
+    it('task should throw error', function(done) {
       let q = new Queue();
       let t = q.push((cb) => {
         setTimeout(() => {
